@@ -10,6 +10,9 @@ class Molecule:
     def add_position(self, position):
        self.position = self.position[0] + position[0], self.position[1] + position[1], self.position[2] + position[2]
 
+    def return_new_position(self, position):
+        return self.position[0] + position[0], self.position[1] + position[1], self.position[2] + position[2]
+
 
 class Similator:
     def __init__(self):
@@ -39,16 +42,69 @@ class Similator:
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
                 current_molecule.add_position(random_distance)              
-            
 
-    def _molecule_contacts_sphere(self, position, reciever_center, reciever_radius):
-        distance = ((position[0] - reciever_center[0]) ** 2 + (position[1] - reciever_center[1]) ** 2 + (position[2] - reciever_center[2]) ** 2) ** 0.5
-        if distance <= reciever_radius:
+    def spherical_transmission(self, transmission_sphere_center = (0, 0, 0), transmission_sphere_radius = 10, reciever_distance = 15,  reciever_radius = 10 ): 
+        molecules = [Molecule((transmission_sphere_center[0] + transmission_sphere_radius, transmission_sphere_center[1], transmission_sphere_center[2])) for _ in range(self.num_points)]
+        transmitted = 0
+        reciever_center = (transmission_sphere_center[0] + reciever_distance + reciever_radius, transmission_sphere_center[1], transmission_sphere_center[2])
+        
+        while transmitted < self.num_target_points:       
+            for i in range(len(molecules)):
+                if transmitted >= self.num_target_points:
+                    break
+                current_molecule = molecules[i]
+                if current_molecule.transmitted:
+                    continue
+                if self._molecule_contacts_sphere(current_molecule.position, reciever_center, reciever_radius):
+                    transmitted += 1
+                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
+                    current_molecule.transmitted = True
+                    continue
+                random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
+                new_position = current_molecule.return_new_position(random_distance)
+                if self._molecule_contacts_sphere(new_position, transmission_sphere_center, transmission_sphere_radius):
+                    continue
+                current_molecule.position = new_position
+
+    def point_transmission_in_cylinder(self, cylinder_radius = 15, transmission_base = (0, 0, 0), reciever_distance = 15, reciever_radius = 10): 
+        transmission_point = (transmission_base[0] , transmission_base[1] + cylinder_radius, transmission_base[2])
+        molecules = [Molecule(transmission_point) for _ in range(self.num_points)]
+        transmitted = 0
+        reciever_center = (transmission_point[0] + reciever_distance + reciever_radius, transmission_point[1], transmission_point[2])
+        
+        while transmitted < self.num_target_points:       
+            for i in range(len(molecules)):
+                if transmitted >= self.num_target_points:
+                    break
+                current_molecule = molecules[i]
+                if current_molecule.transmitted:
+                    continue
+                if self._molecule_contacts_sphere(current_molecule.position, reciever_center, reciever_radius):
+                    transmitted += 1
+                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
+                    current_molecule.transmitted = True
+                    continue
+                random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
+                new_position = current_molecule.return_new_position(random_distance)
+                if self._molecule_outside_cylinder(new_position, (transmission_point[1], transmission_point[2]), cylinder_radius):
+                    continue
+                current_molecule.position = new_position
+
+
+    def _molecule_contacts_sphere(self, position, sphere_center, sphere_radius):
+        distance = ((position[0] - sphere_center[0]) ** 2 + (position[1] - sphere_center[1]) ** 2 + (position[2] - sphere_center[2]) ** 2) ** 0.5
+        if distance <= sphere_radius:
+            return True
+        return False
+    
+    def _molecule_outside_cylinder(self, position, cylinder_axis, cylinder_radius):
+        distance = ((position[1] - cylinder_axis[0]) ** 2 + (position[2] - cylinder_axis[1]) ** 2) ** 0.5
+        if distance >= cylinder_radius:
             return True
         return False
     
 
 if __name__ == "__main__":
     sim = Similator()
-    sim.point_transmission()
+    sim.point_transmission_in_cylinder()
     
