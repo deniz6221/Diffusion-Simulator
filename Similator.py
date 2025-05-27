@@ -1,7 +1,7 @@
 import random
-import argparse
 import math
 from vpython import sphere, cylinder, vector, color, rate, scene
+import pickle
 
 class Molecule:
     def __init__(self, position):
@@ -22,6 +22,7 @@ class Similator:
         self.tao = 0.01
         self.D = math.pow(10, -10)  # Diffusion coefficient in m^2/s
         self.step_size = math.sqrt(self.D*2*self.tao) * 1e6 # Step size in micrometers
+        print(f"Step size: {self.step_size} micrometers")
 
     def point_transmission(self, reciever_distance = 15, transmission_coordinate = (0, 0, 0), reciever_radius = 10):
 
@@ -29,43 +30,63 @@ class Similator:
         transmitted = 0
         reciever_center = (transmission_coordinate[0] + reciever_distance + reciever_radius, transmission_coordinate[1], transmission_coordinate[2])
         
-        while transmitted < self.num_target_points:       
+        transmitted_time_dict = {}
+        time= 0
+        while transmitted < self.num_target_points:   
+            remove_list = []
             for i in range(len(molecules)):
                 if transmitted >= self.num_target_points:
                     break
                 current_molecule = molecules[i]
-                if current_molecule.transmitted:
-                    continue
                 if self._molecule_contacts_sphere(current_molecule.position, reciever_center, reciever_radius):
                     transmitted += 1
+                    if time not in transmitted_time_dict:
+                        transmitted_time_dict[time] = 1
+                    else:
+                        transmitted_time_dict[time] += 1
                     print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
-                    current_molecule.transmitted = True
+                    remove_list.append(i)
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
-                current_molecule.add_position(random_distance)              
+                current_molecule.add_position(random_distance) 
+            time += self.tao
+            time = round(time, 2)
+            for m in reversed(remove_list):
+                molecules.pop(m)             
 
     def spherical_transmission(self, transmission_sphere_center = (0, 0, 0), transmission_sphere_radius = 10, reciever_distance = 15,  reciever_radius = 10 ): 
         molecules = [Molecule((transmission_sphere_center[0] + transmission_sphere_radius, transmission_sphere_center[1], transmission_sphere_center[2])) for _ in range(self.num_points)]
         transmitted = 0
         reciever_center = (transmission_sphere_center[0] + reciever_distance + reciever_radius, transmission_sphere_center[1], transmission_sphere_center[2])
         
-        while transmitted < self.num_target_points:       
+        transmitted_time_dict = {}
+        time = 0
+        while transmitted < self.num_target_points:
+            remove_list = []
             for i in range(len(molecules)):
                 if transmitted >= self.num_target_points:
                     break
                 current_molecule = molecules[i]
-                if current_molecule.transmitted:
-                    continue
                 if self._molecule_contacts_sphere(current_molecule.position, reciever_center, reciever_radius):
                     transmitted += 1
+                    if time not in transmitted_time_dict:
+                        transmitted_time_dict[time] = 1
+                    else:
+                        transmitted_time_dict[time] += 1
                     print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
-                    current_molecule.transmitted = True
+                    remove_list.append(i)
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
                 new_position = current_molecule.return_new_position(random_distance)
                 if self._molecule_contacts_sphere(new_position, transmission_sphere_center, transmission_sphere_radius):
                     continue
                 current_molecule.position = new_position
+            time += self.tao
+            time = round(time, 2)
+            for m in reversed(remove_list):
+                molecules.pop(m)
+        
+        return transmitted_time_dict
 
     def point_transmission_in_cylinder(self, cylinder_radius = 15, transmission_base = (0, 0, 0), reciever_distance = 15, reciever_radius = 10): 
         transmission_point = (transmission_base[0] , transmission_base[1] + cylinder_radius, transmission_base[2])
@@ -73,23 +94,33 @@ class Similator:
         transmitted = 0
         reciever_center = (transmission_point[0] + reciever_distance + reciever_radius, transmission_point[1], transmission_point[2])
         
-        while transmitted < self.num_target_points:       
+        transmitted_time_dict = {}
+        time = 0
+        while transmitted < self.num_target_points:
+            remove_list = []       
             for i in range(len(molecules)):
                 if transmitted >= self.num_target_points:
                     break
                 current_molecule = molecules[i]
-                if current_molecule.transmitted:
-                    continue
                 if self._molecule_contacts_sphere(current_molecule.position, reciever_center, reciever_radius):
                     transmitted += 1
+                    if time not in transmitted_time_dict:
+                        transmitted_time_dict[time] = 1
+                    else:
+                        transmitted_time_dict[time] += 1
                     print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
-                    current_molecule.transmitted = True
+                    remove_list.append(i)
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
                 new_position = current_molecule.return_new_position(random_distance)
                 if self._molecule_outside_cylinder(new_position, (transmission_point[1], transmission_point[2]), cylinder_radius):
                     continue
                 current_molecule.position = new_position
+            time += self.tao
+            time = round(time, 2)
+            for m in reversed(remove_list):
+                molecules.pop(m)
+        return transmitted_time_dict
 
     def barrel_cylinder_animation(self, cylinder_radius = 3, transmission_base = (0, 0, 0), cylinder_height = 30, reciever_distance_to_cylinder = 5, reciever_radius = 10): 
         step = 0.4
@@ -166,5 +197,13 @@ class Similator:
 
 if __name__ == "__main__":
     sim = Similator()
-    sim.barrel_cylinder_animation()
+    output_file = "records/point_1.pkl"
+    final_lst = []
+    for _ in range(15):
+        dct = sim.point_transmission(reciever_distance=5, reciever_radius=10)
+        final_lst.append(dct)
+    if output_file:
+        with open(output_file, 'wb') as f:
+            pickle.dump(final_lst, f)
+
     
