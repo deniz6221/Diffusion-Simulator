@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 tao = 0.01
 
 exp_type = "cylinder"
-param1 = 20
-param2 = 15
+param1 = 10
+param2 = 40
 
 cropped_greatest_key = -1
 
