@@ -6,9 +6,10 @@ tao = 0.01
 
 exp_type = "cylinder"
 param1 = 10
-param2 = 40
+param2 = 5
 
 cropped_greatest_key = -1
+convolution_window =  -1
 
 file_path = f"records/{exp_type}_{param1}_{param2}.pkl"
 data = pickle.load(open(file_path, "rb"))
@@ -58,6 +59,10 @@ if cropped_greatest_key != -1:
 save_name = f"plots/{exp_type}_{param1}_{param2}.png"
 if cropped_greatest_key != -1:
     save_name = f"plots/{exp_type}_{param1}_{param2}_cropped.png"
+if convolution_window > 0:
+    avg = np.convolve(avg, np.ones(convolution_window) / convolution_window, mode='valid')
+    title += f" (Convolved)"
+    save_name = save_name.replace(".png", "_convolved.png")
 
 plt.plot(time_lst[:len(avg)], avg, label="", color='blue')
 plt.xlabel("Time (s)")
