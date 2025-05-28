@@ -58,55 +58,55 @@ if __name__ == "__main__":
             "exp_type": "spherical",
             "reciever_distance": 5,
             "reciever_radius": 10,
-            "tranmission_sphere_radius": 10
+            "transmission_sphere_radius": 10
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 10,
             "reciever_radius": 10,
-            "tranmission_sphere_radius": 10
+            "transmission_sphere_radius": 10
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 15,
             "reciever_radius": 10,
-            "tranmission_sphere_radius": 10
+            "transmission_sphere_radius": 10
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 20,
             "reciever_radius": 10,
-            "tranmission_sphere_radius": 10
+            "transmission_sphere_radius": 10
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 25,
             "reciever_radius": 10,
-            "tranmission_sphere_radius": 10
+            "transmission_sphere_radius": 10
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 15,
             "reciever_radius": 5,
-            "tranmission_sphere_radius": 5
+            "transmission_sphere_radius": 5
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 15,
             "reciever_radius": 10,
-            "tranmission_sphere_radius": 10
+            "transmission_sphere_radius": 10
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 15,
             "reciever_radius": 15,
-            "tranmission_sphere_radius": 15
+            "transmission_sphere_radius": 15
         },
         {
             "exp_type": "spherical",
             "reciever_distance": 15,
             "reciever_radius": 20,
-            "tranmission_sphere_radius": 20
+            "transmission_sphere_radius": 20
         }
     ]
 
@@ -173,6 +173,7 @@ if __name__ == "__main__":
         subprocess.run(cmd)
     
     print("Spherical experiments completed.")
+    
     for params in cylindrical_sim_params:
         cmd = [sys.executable, script] + [f"--{k}={v}" for k, v in params.items()]
         subprocess.run(cmd)
