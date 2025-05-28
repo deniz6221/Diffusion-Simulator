@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 tao = 0.01
 
-exp_type = "point"
-param1 = 10
-param2 = 20
+exp_type = "cylinder"
+param1 = 20
+param2 = 15
 
 cropped_greatest_key = -1
 
@@ -44,14 +44,30 @@ avg = ary  / len(data)
 
 time_lst = np.arange(0, len(avg) * tao, tao)
 
-plt.plot(time_lst[:len(avg)], avg, label="Averaged Captured Molecules", color='blue')
+title = ""
+if exp_type == "point":
+    title = f"Point Tx With Rx Radius: {param1}, Distance: {param2}"
+elif exp_type == "cylinder":
+    title = f"Cylindrical Environment With Rx Radius: {param1}, Distance: {param2}"
+elif exp_type == "spherical":
+    title = f"Spherical Tx/Rx With Tx/Rx Radius: {param1}, Distance: {param2}"
+
+if cropped_greatest_key != -1:
+    title += f" (Cropped at t = {cropped_greatest_key})"
+
+save_name = f"plots/{exp_type}_{param1}_{param2}.png"
+if cropped_greatest_key != -1:
+    save_name = f"plots/{exp_type}_{param1}_{param2}_cropped.png"
+
+plt.plot(time_lst[:len(avg)], avg, label="", color='blue')
 plt.xlabel("Time (s)")
-plt.ylabel("Molecules Captured")
-plt.title("Averaged Data Over Time")
+plt.ylabel("Molecules Captured on Average")
+plt.title(title)
 plt.legend()
 plt.grid()
 #label the average number of molecules captured with a text
-if cropped_greatest_key != -1:
+if cropped_greatest_key == -1:
     plt.text(0.5, 0.9, f"{average_molecules:.2f} molecules transmitted on average", transform=plt.gca().transAxes, fontsize=12, color='red', ha='center')
+plt.savefig(save_name)
 
 plt.show()
