@@ -1,6 +1,6 @@
 import random
 import math
-from vpython import sphere, cylinder, vector, color, rate, scene
+from vpython import sphere, cylinder, vector, color, rate, scene, label
 import pickle
 import argparse
 
@@ -23,7 +23,6 @@ class Similator:
         self.tao = 0.01
         self.D = math.pow(10, -10)  # Diffusion coefficient in m^2/s
         self.step_size = math.sqrt(self.D*2*self.tao) * 1e6 # Step size in micrometers
-        print(f"Step size: {self.step_size} micrometers")
 
     def point_transmission(self, reciever_distance = 15, transmission_coordinate = (0, 0, 0), reciever_radius = 10):
 
@@ -126,7 +125,10 @@ class Similator:
 
     def barrel_cylinder_animation(self, cylinder_radius = 3, transmission_base = (0, 0, 0), cylinder_height = 30, reciever_distance_to_cylinder = 5, reciever_radius = 10): 
         step = 0.4
+        running = True
+        
         def key_input(evt):
+            nonlocal running
             s = evt.key
             cam = scene.camera
             if s == 'w':
@@ -141,10 +143,14 @@ class Similator:
                 cam.pos += vector(0, step, 0)
             elif s == 'e':
                 cam.pos += vector(0, -step, 0)
+            elif s == 'x':  # Add exit key
+                running = False
+                print("Exiting simulation...")
 
         scene.bind('keydown', key_input)
         
-        
+        scene.title = "Molecular Diffusion in Cylindrical Channel"
+        scene.caption = "Use W/A/S/D/Q/E keys to navigate the view | Press X to exit"
         
         transmission_point = (transmission_base[0] , transmission_base[1] + cylinder_radius, transmission_base[2])
         molecules = [sphere(pos=vector(*transmission_point), radius=0.2, color=color.red, make_trail=False) for _ in range(self.num_points)]
@@ -152,11 +158,38 @@ class Similator:
         transmitted = 0
         reciever_center = (transmission_point[0] + reciever_distance_to_cylinder + cylinder_height + reciever_radius, transmission_point[1], transmission_point[2])
         
+        
+        info_label = label(pos=vector(cylinder_height/2, cylinder_radius*2, 0), 
+                           text=f"Molecules: {len(molecules)}\nTransmitted: {transmitted}\nTarget: {self.num_target_points}", 
+                           height=10, 
+                           box=False, 
+                           opacity=0)
+        
+        transmitter_label = label(pos=vector(*transmission_point)+vector(0,2,0), 
+                                text="Transmitter", 
+                                height=8,
+                                box=False,
+                                opacity=0)
+        
+        receiver_label = label(pos=vector(*reciever_center)+vector(0,2,0),
+                               text="Receiver",
+                               height=8, 
+                               box=False,
+                               opacity=0)
+        
+        sim_time = 0
+        time_label = label(pos=vector(cylinder_height/2, -cylinder_radius*1.5, 0),
+                          text=f"Simulation time: {sim_time:.2f}s",
+                          height=10,
+                          box=False,
+                          opacity=0)
+        
         reciever_sphere = sphere(pos=vector(*reciever_center), radius=reciever_radius, color=color.blue)
         cylinder_obj = cylinder(pos=vector(*transmission_point), axis=vector(cylinder_height,0,0), radius=cylinder_radius, color=color.green, opacity=0.2)
 
-        while transmitted < self.num_target_points:     
+        while transmitted < self.num_target_points and running:     
             rate(10)  
+            sim_time += self.tao
             remove_list = []
             for i in range(len(molecules)):
                 current_molecule = molecules[i]
@@ -172,8 +205,14 @@ class Similator:
                 current_molecule.pos = vector(*new_position)
             for m in reversed(remove_list):
                 ml = molecules.pop(m)
-
                 
+            info_label.text = f"Molecules: {len(molecules)}\nTransmitted: {transmitted}\nTarget: {self.num_target_points}"
+            time_label.text = f"Simulation time: {sim_time:.2f}s"
+    
+        if not running:
+            print(f"Simulation exited by user. Final stats: Transmitted {transmitted} molecules in {sim_time:.2f}s")
+            # Clean up or perform any necessary actions before exiting
+    
     def _molecule_contacts_sphere(self, position, sphere_center, sphere_radius):
         distance = ((position[0] - sphere_center[0]) ** 2 + (position[1] - sphere_center[1]) ** 2 + (position[2] - sphere_center[2]) ** 2) ** 0.5
         if distance <= sphere_radius:
@@ -201,7 +240,7 @@ if __name__ == "__main__":
     sim = Similator()
     
     args = argparse.ArgumentParser(description="Run the simulation with specified parameters.")
-    args.add_argument("--exp_type", type=str, choices=["point", "spherical", "cylinder"], required=True, help="Type of experiment to run: point, spherical, or cylinder.")
+    args.add_argument("--exp_type", type=str, choices=["point", "spherical", "cylinder", "barrel"], required=True, help="Type of experiment to run: point, spherical, or cylinder.")
     args.add_argument("--reciever_distance", type=int, nargs='?', default=15, help="Distance to the receiver (default: 15).")
     args.add_argument("--reciever_radius", type=int, nargs='?', default=10, help="Radius of the receiver (default: 10).")
     args.add_argument("--transmission_sphere_radius", type=int, nargs='?', default=10, help="Radius of the transmission sphere (default: 10).")
@@ -246,3 +285,9 @@ if __name__ == "__main__":
             with open(output_file, 'wb') as f:
                 pickle.dump(final_lst, f)
     
+    elif exp_type == "barrel":
+        cylinder_radius = 3
+        reciever_radius = 10
+        sim.barrel_cylinder_animation(cylinder_radius=cylinder_radius, reciever_distance_to_cylinder=reciever_distance, reciever_radius=reciever_radius)
+    else:
+        pass
