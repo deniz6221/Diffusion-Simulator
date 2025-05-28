@@ -3,7 +3,12 @@ import pickle
 import matplotlib.pyplot as plt
 
 tao = 0.01
-file_path = "records/spherical_1.pkl"
+
+exp_type = "spherical"
+param1 = 10
+param2 = 20
+
+file_path = f"records/{exp_type}_{param1}_{param2}.pkl"
 data = pickle.load(open(file_path, "rb"))
 
 greatest_key = -1
@@ -33,9 +38,9 @@ avg = ary  / len(data)
 
 time_lst = np.arange(0, len(avg) * tao, tao)
 
-plt.plot(time_lst[:len(avg)], avg, label="Averaged Data", color='blue')
+plt.plot(time_lst[:len(avg)], avg, label="Averaged Captured Molecules", color='blue')
 plt.xlabel("Time (s)")
-plt.ylabel("Value")
+plt.ylabel("Molecules Captured")
 plt.title("Averaged Data Over Time")
 plt.legend()
 plt.grid()

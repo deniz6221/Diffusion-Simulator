@@ -2,6 +2,7 @@ import random
 import math
 from vpython import sphere, cylinder, vector, color, rate, scene
 import pickle
+import argparse
 
 class Molecule:
     def __init__(self, position):
@@ -32,7 +33,7 @@ class Similator:
         
         transmitted_time_dict = {}
         time= 0
-        while transmitted < self.num_target_points:   
+        while transmitted < self.num_target_points and time < 100:   
             remove_list = []
             for i in range(len(molecules)):
                 if transmitted >= self.num_target_points:
@@ -44,7 +45,7 @@ class Similator:
                         transmitted_time_dict[time] = 1
                     else:
                         transmitted_time_dict[time] += 1
-                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
+                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted} at time {time}")
                     remove_list.append(i)
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
@@ -52,16 +53,17 @@ class Similator:
             time += self.tao
             time = round(time, 2)
             for m in reversed(remove_list):
-                molecules.pop(m)             
+                molecules.pop(m)
+        return transmitted_time_dict             
 
     def spherical_transmission(self, transmission_sphere_center = (0, 0, 0), transmission_sphere_radius = 10, reciever_distance = 15,  reciever_radius = 10 ): 
         molecules = [Molecule((transmission_sphere_center[0] + transmission_sphere_radius, transmission_sphere_center[1], transmission_sphere_center[2])) for _ in range(self.num_points)]
         transmitted = 0
-        reciever_center = (transmission_sphere_center[0] + reciever_distance + reciever_radius, transmission_sphere_center[1], transmission_sphere_center[2])
+        reciever_center = (transmission_sphere_center[0] + transmission_sphere_radius + reciever_distance + reciever_radius, transmission_sphere_center[1], transmission_sphere_center[2])
         
         transmitted_time_dict = {}
         time = 0
-        while transmitted < self.num_target_points:
+        while transmitted < self.num_target_points and time < 100:
             remove_list = []
             for i in range(len(molecules)):
                 if transmitted >= self.num_target_points:
@@ -73,7 +75,7 @@ class Similator:
                         transmitted_time_dict[time] = 1
                     else:
                         transmitted_time_dict[time] += 1
-                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
+                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted} at time {time}")
                     remove_list.append(i)
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
@@ -96,7 +98,7 @@ class Similator:
         
         transmitted_time_dict = {}
         time = 0
-        while transmitted < self.num_target_points:
+        while transmitted < self.num_target_points and time < 100:
             remove_list = []       
             for i in range(len(molecules)):
                 if transmitted >= self.num_target_points:
@@ -108,7 +110,7 @@ class Similator:
                         transmitted_time_dict[time] = 1
                     else:
                         transmitted_time_dict[time] += 1
-                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted}")
+                    print(f"Molecule {i} transmitted to the receiver at {current_molecule.position}, total transmitted: {transmitted} at time {time}")
                     remove_list.append(i)
                     continue
                 random_distance = (random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size, random.choice([-1, 1]) * self.step_size)
@@ -197,13 +199,50 @@ class Similator:
 
 if __name__ == "__main__":
     sim = Similator()
-    output_file = "records/point_1.pkl"
-    final_lst = []
-    for _ in range(15):
-        dct = sim.point_transmission(reciever_distance=5, reciever_radius=10)
-        final_lst.append(dct)
-    if output_file:
-        with open(output_file, 'wb') as f:
-            pickle.dump(final_lst, f)
+    
+    args = argparse.ArgumentParser(description="Run the simulation with specified parameters.")
+    args.add_argument("--exp_type", type=str, choices=["point", "spherical", "cylinder"], required=True, help="Type of experiment to run: point, spherical, or cylinder.")
+    args.add_argument("--reciever_distance", type=int, nargs='?', default=15, help="Distance to the receiver (default: 15).")
+    args.add_argument("--reciever_radius", type=int, nargs='?', default=10, help="Radius of the receiver (default: 10).")
+    args.add_argument("--transmission_sphere_radius", type=int, nargs='?', default=10, help="Radius of the transmission sphere (default: 10).")
+    args.add_argument("--cylinder_radius", type=int, nargs='?', default=15, help="Radius of the cylinder (default: 15).")
 
+    args = args.parse_args()
+    exp_type = args.exp_type
+    reciever_distance = args.reciever_distance
+    reciever_radius = args.reciever_radius
+    transmission_sphere_radius = args.transmission_sphere_radius
+    cylinder_radius = args.cylinder_radius
+
+    if exp_type == "point":
+
+        output_file = f"records/point_{reciever_distance}_{reciever_radius}.pkl"
+        final_lst = []
+        for _ in range(15):
+            dct = sim.point_transmission(reciever_distance=reciever_distance, reciever_radius=reciever_radius)
+            final_lst.append(dct)
+        if output_file:
+            with open(output_file, 'wb') as f:
+                pickle.dump(final_lst, f)
+    elif exp_type == "spherical":
+
+
+        output_file = f"records/spherical_{transmission_sphere_radius}_{reciever_distance}.pkl"
+        final_lst = []
+        for _ in range(15):
+            dct = sim.spherical_transmission(transmission_sphere_radius=transmission_sphere_radius, reciever_radius=reciever_radius, reciever_distance=reciever_distance)
+            final_lst.append(dct)
+        if output_file:
+            with open(output_file, 'wb') as f:
+                pickle.dump(final_lst, f)
+    elif exp_type == "cylinder":
+
+        output_file = f"records/cylinder_{reciever_radius}_{reciever_distance}.pkl"
+        final_lst = []
+        for _ in range(15):
+            dct = sim.point_transmission_in_cylinder(cylinder_radius=cylinder_radius, reciever_radius=reciever_radius, reciever_distance=reciever_distance)
+            final_lst.append(dct)
+        if output_file:
+            with open(output_file, 'wb') as f:
+                pickle.dump(final_lst, f)
     
