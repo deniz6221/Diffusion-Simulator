@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
     if exp_type == "point":
 
-        output_file = f"records/point_{reciever_distance}_{reciever_radius}.pkl"
+        output_file = f"records/point_{reciever_radius}_{reciever_distance}.pkl"
         final_lst = []
         for _ in range(15):
             dct = sim.point_transmission(reciever_distance=reciever_distance, reciever_radius=reciever_radius)
